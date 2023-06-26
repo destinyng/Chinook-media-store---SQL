@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="/Users/phuongdungcaonguyen/Downloads/chinook.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="1"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="3268"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,6:mainalbums"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="albums" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="51"/><column index="2" value="300"/><column index="3" value="48"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="customers" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="69"/><column index="2" value="63"/><column index="3" value="75"/><column index="4" value="250"/><column index="5" value="226"/><column index="6" value="119"/><column index="7" value="43"/><column index="8" value="89"/><column index="9" value="74"/><column index="10" value="112"/><column index="11" value="112"/><column index="12" value="159"/><column index="13" value="80"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="employees" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="69"/><column index="2" value="59"/><column index="3" value="61"/><column index="4" value="110"/><column index="5" value="63"/><column index="6" value="120"/><column index="7" value="121"/><column index="8" value="157"/><column index="9" value="64"/><column index="10" value="36"/><column index="11" value="50"/><column index="12" value="68"/><column index="13" value="107"/><column index="14" value="107"/><column index="15" value="146"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="invoice_items" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="77"/><column index="2" value="56"/><column index="3" value="48"/><column index="4" value="57"/><column index="5" value="53"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="invoices" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="56"/><column index="2" value="69"/><column index="3" value="121"/><column index="4" value="226"/><column index="5" value="119"/><column index="6" value="68"/><column index="7" value="89"/><column index="9" value="42"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="playlist_track" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="56"/><column index="2" value="48"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="playlists" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="56"/><column index="2" value="138"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="tracks" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="48"/><column index="2" value="300"/><column index="3" value="51"/><column index="4" value="75"/><column index="5" value="49"/><column index="6" value="300"/><column index="7" value="73"/><column index="8" value="63"/><column index="9" value="57"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1">-- Which tracks appeared in the most playlists? how many playlist did they appear in? 
+WITH track_info AS(
+SELECT TrackId, COUNT(*) AS &quot;Counts&quot;
+FROM playlist_track
+GROUP BY TrackId
+ORDER BY 2 DESC)
+
+SELECT tracks.Name, track_info.Counts
+FROM track_info
+JOIN tracks
+ON track_info.TrackId = tracks.TrackId
+LIMIT 10;
+
+-- Which track generated the most revenue? which album? which genre?
+
+SELECT tracks.Name, SUM(invoice_items.UnitPrice) AS &quot;Total Revenue&quot;
+FROM tracks
+JOIN invoice_items
+	ON tracks.TrackId = invoice_items.TrackId
+GROUP BY tracks.TrackId
+ORDER BY 2 DESC
+LIMIT 10;
+
+SELECT albums.Title, SUM(invoice_items.UnitPrice) AS &quot;Total Revenue&quot;
+FROM tracks
+JOIN invoice_items
+	ON tracks.TrackId = invoice_items.TrackId
+JOIN albums
+	ON tracks.AlbumId = albums.AlbumId
+GROUP BY albums.AlbumId
+ORDER BY 2 DESC
+LIMIT 10; 
+
+SELECT genres.Name, ROUND(SUM(invoice_items.UnitPrice),2) AS &quot;Total Revenue&quot;
+FROM tracks
+JOIN invoice_items
+	ON tracks.TrackId = invoice_items.TrackId
+JOIN genres
+	ON tracks.GenreId = genres.GenreId
+GROUP BY genres.GenreId
+ORDER BY 2 DESC
+LIMIT 10;
+
+-- Which countries have the highest sales revenue? What percent of total revenue does each country make up?
+SELECT customers.Country, 
+	SUM(invoices.Total) AS &quot;Total sales&quot;,
+	ROUND(SUM(invoices.Total) * 100/(SELECT SUM(invoices.Total) FROM invoices) , 2) AS &quot;Percent of Revenue&quot;
+FROM customers
+JOIN invoices
+	ON customers.CustomerId = invoices.CustomerId
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 10;
+
+-- How many customers did each employee support, what is the average revenue for each sale, and what is their total sale?
+SELECT employees.EmployeeId, 
+				employees.LastName, employees.FirstName,
+				COUNT(*) AS &quot;Number customers of helping&quot;,
+				ROUND(AVG(invoices.Total),2) AS &quot;Average Revenue&quot;,
+				ROUND(SUM(invoices.Total),2) AS &quot;Total Sales&quot;
+FROM invoices
+JOIN customers
+	ON invoices.CustomerId = customers.CustomerId
+JOIN employees
+	ON employees.EmployeeId = customers.SupportRepId
+GROUP BY 1;
+
+-- --Do longer or shorter length albums tend to generate more revenue?
+WITH album_length AS(
+SELECT AlbumId, COUNT(*) AS &quot;TrackCount&quot;
+FROM tracks
+GROUP BY AlbumId)
+SELECT
+	album_length.TrackCount AS &quot;Track Count&quot;,
+	ROUND(SUM(invoice_items.UnitPrice),2) AS &quot;Total Revenue&quot;,
+	COUNT(DISTINCT album_length.AlbumId) AS &quot;Total # of Albums&quot;,
+	ROUND(SUM(invoice_items.UnitPrice)/COUNT(DISTINCT album_length.AlbumId),2) AS &quot;Average Revenue Per Album&quot;
+FROM invoice_items
+JOIN tracks
+	ON tracks.TrackId = invoice_items.TrackId
+JOIN album_length
+	ON album_length.AlbumId = tracks.AlbumId
+GROUP BY 1;
+
+-- --Is the number of times a track appear in any playlist a good indicator of sales?
+WITH playlist_count AS (
+SELECT TrackId, COUNT(*) AS &quot;pl_count&quot;
+FROM playlist_track
+GROUP BY 1
+ORDER BY 2 DESC)
+SELECT playlist_count.pl_count AS &quot;# of Playlists&quot;,
+	ROUND(SUM(invoice_items.UnitPrice)/COUNT(DISTINCT playlist_count.TrackId),2) AS &quot;Average Track Revenue&quot;
+FROM playlist_count
+JOIN tracks
+	ON playlist_count.TrackId = tracks.TrackId
+JOIN invoice_items
+	ON invoice_items.TrackId = tracks.TrackId
+GROUP BY 1;
+
+--How much revenue is generated each year, and what is its percent change from the previous year?
+WITH revenue AS (
+SELECT 
+	CAST(strftime(&quot;%Y&quot;, InvoiceDate) AS int) -1 AS &quot;PrevYear&quot;,
+	CAST(strftime(&quot;%Y&quot;, InvoiceDate) AS int) AS &quot;ThisYear&quot;,
+	ROUND(SUM(Total),2) AS &quot;TotalRevenue&quot;
+FROM invoices
+GROUP BY 2)
+
+SELECT cur.PrevYear,
+				prev.TotalRevenue,
+				cur.ThisYear,
+				cur.TotalRevenue,
+				ROUND((cur.TotalRevenue - prev.TotalRevenue) / prev.TotalRevenue *100,2) AS &quot;Percent Change from Previous Year&quot;
+FROM revenue cur 
+JOIN revenue prev
+	ON prev.ThisYear = cur.PrevYear;
+
+	
+
+
+</sql><current_tab id="0"/></tab_sql></sqlb_project>
